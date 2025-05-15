@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Vendor Dashboard</title>
+</head>
+<body>
+    <h2>Welcome, {{ session.username }}</h2>
+    <p><a href="{{ url_for('logout') }}">Logout</a> | <a href="{{ url_for('track') }}">Track Deliveries</a></p>
+    <h3>Live Deliveries</h3>
+    {% if deliveries %}
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Delivery ID</th>
+                <th>Source</th>
+                <th>Destination</th>
+                <th>Product</th>
+                <th>Order Type</th>
+                <th>Progress</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for id, delivery in deliveries.items() %}
+            <tr>
+                <td>{{ id }}</td>
+                <td>{{ delivery.source }}</td>
+                <td>{{ delivery.destination }}</td>
+                <td>{{ delivery.product }}</td>
+                <td>{{ delivery.order_type }}</td>
+                <td>{{ delivery.progress }}%</td>
+                <td>{{ delivery.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No live deliveries at the moment.</p>
+    {% endif %}
+</body>
+</html>

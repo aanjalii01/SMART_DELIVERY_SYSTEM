@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h2>Admin Dashboard</h2>
+    <p>Welcome, {{ session.username }}!</p>
+    <h3>Registered Users</h3>
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr><th>Username</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+            {% for username, data in users.items() %}
+            <tr><td>{{ username }}</td><td>{{ data.role }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><a href="{{ url_for('logout') }}">Logout</a></p>
+</body>
+</html>

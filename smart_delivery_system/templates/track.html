@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Track Deliveries</title>
+    <script>
+        function fetchStatus(orderId) {
+            fetch(`/delivery-status/${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.error) {
+                        alert(data.error);
+                    } else {
+                        document.getElementById(`status-${orderId}`).innerText = data.status;
+                        document.getElementById(`progress-${orderId}`).innerText = data.progress + '%';
+                    }
+                });
+        }
+
+        function startTracking() {
+            const orderIds = [...document.querySelectorAll('[data-order-id]')].map(el => el.getAttribute('data-order-id'));
+            setInterval(() => {
+                orderIds.forEach(id => fetchStatus(id));
+            }, 30000); // update every 30 seconds
+        }
+
+        window.onload = startTracking;
+    </script>
+</head>
+<body>
+    <h2>Track Deliveries</h2>
+    <p><a href="{{ url_for('logout') }}">Logout</a></p>
+    {% if deliveries %}
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Delivery ID</th>
+                <th>Source</th>
+                <th>Destination</th>
+                <th>Product</th>
+                <th>Order Type</th>
+                <th>Progress</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for id, delivery in deliveries.items() %}
+            <tr data-order-id="{{ id }}">
+                <td>{{ id }}</td>
+                <td>{{ delivery.source }}</td>
+                <td>{{ delivery.destination }}</td>
+                <td>{{ delivery.product }}</td>
+                <td>{{ delivery.order_type }}</td>
+                <td id="progress-{{ id }}">{{ delivery.progress }}%</td>
+                <td id="status-{{ id }}">{{ delivery.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No deliveries found.</p>
+    {% endif %}
+</body>
+</html>

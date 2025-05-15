@@ -51,21 +51,3 @@ smart-delivery-system/
 
 ---
 
-## 🔧 Setup Instructions
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/yourusername/smart-delivery-system.git
-cd smart-delivery-system
-
-pip install -r requirements.txt
-
-python app.py
-
-
-# In app.py
-time.sleep(2)  # For fast testing
-# OR
-time.sleep(interval * 60)  # For realistic timing
-

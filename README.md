@@ -33,20 +33,20 @@ An intelligent, drone-based delivery system built with **Flask**, simulating rea
 ## 🗂️ Project Structure
 
 smart-delivery-system/
-│
-├── app.py # Main Flask backend
-├── templates/ # HTML templates
-│ ├── login.html
-│ ├── register.html
-│ ├── index.html
-│ ├── dashboard.html
-│ └── track.html
-├── static/
-│ ├── style.css
-│ └── script.js
-├── dehradun_locations.csv # Predefined delivery points
-├── requirements.txt
-└── README.md
+-│
+-├── app.py # Main Flask backend
+-├── templates/ # HTML templates
+-│ ├── login.html
+-│ ├── register.html
+-│ ├── index.html
+-│ ├── dashboard.html
+-│ └── track.html
+-├── static/
+-│ ├── style.css
+-│ └── script.js
+-├── dehradun_locations.csv # Predefined delivery points
+-├── requirements.txt
+-└── README.md
 
 
 ---

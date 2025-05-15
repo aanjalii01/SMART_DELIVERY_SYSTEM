@@ -51,3 +51,25 @@ smart-delivery-system/
 
 ---
 
+## 🔧 Setup Instructions
+
+### 1. Clone the repository
+
+git clone https://github.com/yourusername/smart-delivery-system.git
+cd smart-delivery-system
+
+### 2. Install dependencies
+
+pip install -r requirements.txt
+
+### 3.  Run the Flask app
+
+python app.py
+
+## ⚙️ Configuration (Optional)
+
+# In app.py
+time.sleep(2)  # For fast testing
+# OR
+time.sleep(interval * 60)  # For realistic timing
+

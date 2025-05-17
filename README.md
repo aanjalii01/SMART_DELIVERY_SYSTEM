@@ -1,5 +1,3 @@
-# Save the generated README content to a file
-readme_content = """
 # 📦 Smart Delivery System
 
 An intelligent, drone-based delivery system built with **Flask**, simulating real-time package delivery across locations in **Dehradun**. The system selects the optimal drone, calculates flight height, estimates delivery time, and provides live progress tracking with role-based access.

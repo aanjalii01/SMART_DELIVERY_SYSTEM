@@ -93,4 +93,4 @@ SMART_DELIVERY_SYSTEM/
 
 ---
 
-*Developed for DAA (DAA-IV-T099) at Graphic Era University.*
+*Developed for the Design and Analysis of Algorithms course (DAA-IV-T099) at Graphic Era University.*

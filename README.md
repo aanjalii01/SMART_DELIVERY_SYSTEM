@@ -85,14 +85,11 @@ SMART_DELIVERY_SYSTEM/
 
 ## 👥 Contributors
 
-- **Anjali Sinha** – Team Lead / Backend
+- **Anjali Sinha** – Team Lead / Backend logic
 - **Hitesh Kumar** – Backend & Altitude Logic
 - **Anmol Kumar** – Frontend / Simulation UI
 - **Vasu Singh** – Algorithms / Drone Allocation
 
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 

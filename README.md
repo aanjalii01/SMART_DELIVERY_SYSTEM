@@ -1,6 +1,6 @@
 # 🚁 Smart Delivery System
 
-An autonomous drone-based logistics solution designed to optimize package delivery in Dehradun using real-time map data and intelligent routing algorithms.
+An autonomous drone-based logistics solution designed to optimize package delivery using real-time map data and intelligent routing algorithms.
 
 ## 📌 Project Overview
 

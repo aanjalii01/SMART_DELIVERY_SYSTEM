@@ -80,6 +80,8 @@ SMART_DELIVERY_SYSTEM/
 - Multi-drone delivery coordination
 - Real-time GPS link sharing
 - Email/SMS notifications
+- Performance Optimization
+- Integration with E-Commerce Platforms
 
 ## 👥 Contributors
 

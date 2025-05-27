@@ -85,8 +85,8 @@ SMART_DELIVERY_SYSTEM/
 
 - **Anjali Sinha** – Team Lead / Backend
 - **Hitesh Kumar** – Backend & Altitude Logic
-- **Vasu Singh** – Frontend / Simulation UI
-- **Anmol Kumar** – Algorithms / Drone Allocation
+- **Anmol Kumar** – Frontend / Simulation UI
+- **Vasu Singh** – Algorithms / Drone Allocation
 
 ## 📄 License
 

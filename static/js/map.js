@@ -316,6 +316,117 @@ class MapManager {
     }
 }
 
+// Delivery Location Map Manager
+class DeliveryLocationMapManager extends MapManager {
+    constructor(containerId) {
+        super(containerId, {
+            center: [30.3165, 78.0322], // Dehradun center
+            zoom: 13
+        });
+        this.deliveryMarker = null;
+        this.onLocationSelected = null;
+    }
+
+    init() {
+        super.init();
+        this.setupMapClickHandler();
+        this.loadWarehouses();
+        return this;
+    }
+
+    setupMapClickHandler() {
+        this.map.on('click', (e) => {
+            const { lat, lng } = e.latlng;
+            this.setDeliveryLocation(lat, lng);
+        });
+    }
+
+    setDeliveryLocation(lat, lng) {
+        // Remove existing delivery marker
+        if (this.deliveryMarker) {
+            this.map.removeLayer(this.deliveryMarker);
+        }
+
+        // Add new delivery marker
+        this.deliveryMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+                html: `
+                    <div class="drone-marker delivery-pin">
+                        <div class="marker-icon">📍</div>
+                        <div class="marker-pulse"></div>
+                    </div>
+                `,
+                className: 'custom-marker',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            })
+        }).addTo(this.map);
+
+        this.deliveryMarker.bindPopup(`
+            <div class="text-center">
+                <strong>Delivery Location</strong><br>
+                <small class="text-muted">Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}</small>
+            </div>
+        `).openPopup();
+
+        // Update form fields
+        document.getElementById('delivery_lat').value = lat;
+        document.getElementById('delivery_lng').value = lng;
+
+        // Show location preview
+        const locationPreview = document.getElementById('locationPreview');
+        const locationCoords = document.getElementById('locationCoords');
+        
+        if (locationPreview && locationCoords) {
+            locationCoords.textContent = `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            locationPreview.classList.remove('d-none');
+        }
+
+        // Trigger callback if set
+        if (this.onLocationSelected) {
+            this.onLocationSelected(lat, lng);
+        }
+    }
+
+    setCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    this.map.setView([lat, lng], 15);
+                    this.setDeliveryLocation(lat, lng);
+                },
+                (error) => {
+                    console.error('Error getting location:', error);
+                    alert('Unable to get your current location. Please click on the map to set delivery location.');
+                }
+            );
+        } else {
+            alert('Geolocation is not supported by this browser. Please click on the map to set delivery location.');
+        }
+    }
+
+    async loadWarehouses() {
+        // Sample warehouses for Dehradun
+        const warehouses = [
+            { id: 1, name: 'Electronics Hub', lat: 30.3204, lng: 78.0361, type: 'electronics' },
+            { id: 2, name: 'Medical Supplies', lat: 30.3089, lng: 78.0435, type: 'medical' },
+            { id: 3, name: 'Fresh Foods', lat: 30.3290, lng: 78.0267, type: 'food' },
+            { id: 4, name: 'Book Store', lat: 30.3134, lng: 78.0404, type: 'books' },
+            { id: 5, name: 'Grocery Central', lat: 30.3076, lng: 78.0272, type: 'grocery' }
+        ];
+
+        warehouses.forEach(warehouse => {
+            this.addWarehouseMarker(warehouse.id, warehouse.lat, warehouse.lng, {
+                name: warehouse.name,
+                type: warehouse.type
+            });
+        });
+    }
+}
+
 // Dashboard Map Manager
 class DashboardMapManager extends MapManager {
     constructor(containerId) {

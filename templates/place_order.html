@@ -197,19 +197,33 @@
                                     </button>
                                 </div>
 
+                                <!-- Interactive Map -->
+                                <div class="mb-3">
+                                    <label class="form-label">Click on the map to set delivery location</label>
+                                    <div class="map-container" id="deliveryMap" style="height: 300px; border: 2px solid #dee2e6; border-radius: 8px;">
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                            <div class="text-center">
+                                                <div class="spinner mb-3"></div>
+                                                <p>Loading map...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Click anywhere on the map to set your delivery location</small>
+                                </div>
+
                                 <!-- Hidden location inputs -->
                                 <input type="hidden" id="delivery_lat" name="delivery_lat" required>
                                 <input type="hidden" id="delivery_lng" name="delivery_lng" required>
 
                                 <!-- Address -->
                                 <div class="mb-3">
-                                    <label for="delivery_address" class="form-label">Delivery Address</label>
+                                    <label for="delivery_address" class="form-label">Delivery Address (Optional)</label>
                                     <textarea class="form-control" 
                                               id="delivery_address" 
                                               name="delivery_address" 
-                                              rows="3" 
-                                              placeholder="Enter your complete delivery address"
-                                              required></textarea>
+                                              rows="2" 
+                                              placeholder="Add any specific delivery instructions or landmark details"></textarea>
+                                    <small class="text-muted">This field is optional - your location is set by clicking on the map above</small>
                                 </div>
 
                                 <!-- Location Preview -->
@@ -218,7 +232,7 @@
                                         <div class="d-flex align-items-center">
                                             <i data-feather="map-pin" class="me-2"></i>
                                             <div>
-                                                <strong>Location set!</strong><br>
+                                                <strong>Delivery location set!</strong><br>
                                                 <small id="locationCoords" class="text-muted"></small>
                                             </div>
                                         </div>
@@ -310,67 +324,36 @@ document.addEventListener('DOMContentLoaded', function() {
         new OrderManager();
     }
     
-    // Get location button functionality
-    const getLocationBtn = document.getElementById('getLocationBtn');
-    const locationPreview = document.getElementById('locationPreview');
-    const locationCoords = document.getElementById('locationCoords');
+    // Initialize delivery location map
+    let deliveryMapManager = null;
     
-    if (getLocationBtn) {
-        getLocationBtn.addEventListener('click', async function() {
-            const originalText = this.innerHTML;
+    // Wait for map container to be ready
+    setTimeout(() => {
+        const mapContainer = document.getElementById('deliveryMap');
+        if (mapContainer && typeof DeliveryLocationMapManager !== 'undefined') {
+            deliveryMapManager = new DeliveryLocationMapManager('deliveryMap').init();
             
-            try {
-                this.innerHTML = '<span class="spinner"></span> Getting location...';
-                this.disabled = true;
-                
-                const geoManager = new GeolocationManager();
-                const position = await geoManager.getCurrentPosition();
-                
-                // Update hidden fields
-                document.getElementById('delivery_lat').value = position.coords.latitude;
-                document.getElementById('delivery_lng').value = position.coords.longitude;
-                
-                // Show location preview
-                locationCoords.textContent = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
-                locationPreview.classList.remove('d-none');
-                
-                // Update button
-                this.innerHTML = '<i data-feather="check"></i> Location Set';
-                this.classList.remove('btn-outline-primary');
-                this.classList.add('btn-success');
-                
-                feather.replace();
-                
-            } catch (error) {
-                console.error('Geolocation error:', error);
-                
-                this.innerHTML = '<i data-feather="x"></i> Location Failed';
-                this.classList.remove('btn-outline-primary');
-                this.classList.add('btn-danger');
-                
-                // Show error alert
-                const errorAlert = document.createElement('div');
-                errorAlert.className = 'alert alert-warning mt-3';
-                errorAlert.innerHTML = `
-                    <i data-feather="alert-triangle"></i>
-                    Could not get your location. Please enter your address manually.
-                `;
-                
-                const cardBody = this.closest('.card-body');
-                cardBody.appendChild(errorAlert);
-                feather.replace();
-                
-                // Reset button after 3 seconds
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.classList.remove('btn-danger');
-                    this.classList.add('btn-outline-primary');
-                    this.disabled = false;
-                    feather.replace();
-                }, 3000);
+            // Handle current location button
+            const getLocationBtn = document.getElementById('getLocationBtn');
+            if (getLocationBtn && deliveryMapManager) {
+                getLocationBtn.addEventListener('click', function() {
+                    const originalText = this.innerHTML;
+                    
+                    this.innerHTML = '<span class="spinner"></span> Getting location...';
+                    this.disabled = true;
+                    
+                    deliveryMapManager.setCurrentLocation();
+                    
+                    // Reset button after a moment
+                    setTimeout(() => {
+                        this.innerHTML = '<i data-feather="crosshair"></i> Use My Current Location';
+                        this.disabled = false;
+                        feather.replace();
+                    }, 2000);
+                });
             }
-        });
-    }
+        }
+    }, 500);
     
     // Form submission validation
     const orderForm = document.getElementById('orderForm');
@@ -397,16 +380,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check delivery location
             const lat = document.getElementById('delivery_lat').value;
             const lng = document.getElementById('delivery_lng').value;
-            const address = document.getElementById('delivery_address').value.trim();
             
             if (!lat || !lng) {
-                errors.push('Please set your delivery location');
-                isValid = false;
-            }
-            
-            if (!address) {
-                errors.push('Please enter your delivery address');
-                document.getElementById('delivery_address').classList.add('is-invalid');
+                errors.push('Please set your delivery location by clicking on the map');
                 isValid = false;
             }
             

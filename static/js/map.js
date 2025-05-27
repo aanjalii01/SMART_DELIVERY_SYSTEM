@@ -454,13 +454,18 @@ class DashboardMapManager extends MapManager {
     }
 
     async loadWarehouses() {
-        // Sample warehouse data (in a real app, this would come from API)
+        // Enhanced warehouse network for better algorithm demonstration
         const warehouses = [
             { id: 1, name: "Electronics Hub", lat: 30.3165, lng: 78.0322, location: "Dehradun Central", products: "Laptops, Smartphones, Tablets" },
             { id: 2, name: "Medical Center", lat: 30.3255, lng: 78.0367, location: "ISBT Dehradun", products: "Medicines, First Aid, Health Supplements" },
             { id: 3, name: "Food Court", lat: 30.3204, lng: 78.0301, location: "Paltan Bazaar", products: "Snacks, Beverages, Fast Food" },
             { id: 4, name: "Books & Stationery", lat: 30.3596, lng: 78.0815, location: "Rajpur Road", products: "Books, Notebooks, Pens" },
-            { id: 5, name: "Grocery Store", lat: 30.3177, lng: 78.0339, location: "Clock Tower", products: "Groceries, Vegetables, Fruits" }
+            { id: 5, name: "Grocery Store", lat: 30.3177, lng: 78.0339, location: "Clock Tower", products: "Groceries, Vegetables, Fruits" },
+            { id: 6, name: "Fashion Hub", lat: 30.3089, lng: 78.0435, location: "Ashley Hall", products: "Clothing, Accessories, Shoes" },
+            { id: 7, name: "Sports Center", lat: 30.3290, lng: 78.0267, location: "Rispana", products: "Sports Equipment, Fitness Gear" },
+            { id: 8, name: "Tech Plaza", lat: 30.3134, lng: 78.0404, location: "Gandhi Road", products: "Computer Parts, Gadgets" },
+            { id: 9, name: "Home & Garden", lat: 30.3076, lng: 78.0272, location: "Karanpur", products: "Furniture, Garden Tools, Decor" },
+            { id: 10, name: "Pharmacy Plus", lat: 30.3445, lng: 78.0661, location: "Sahastradhara Road", products: "Medicines, Cosmetics, Health Products" }
         ];
 
         warehouses.forEach(warehouse => {
@@ -474,23 +479,32 @@ class DashboardMapManager extends MapManager {
             if (response.ok) {
                 const drones = await response.json();
                 drones.forEach(drone => {
-                    this.addDroneMarker(drone.id, drone.current_lat, drone.current_lng, drone);
+                    if (drone.current_lat && drone.current_lng) {
+                        this.addDroneMarker(drone.id, drone.current_lat, drone.current_lng, drone);
+                    }
                 });
+            } else {
+                this.loadSampleDrones();
             }
         } catch (error) {
             console.error('Error loading drones:', error);
-            // Fallback to sample data
             this.loadSampleDrones();
         }
     }
 
     loadSampleDrones() {
+        // Enhanced drone fleet for better greedy algorithm demonstration
         const sampleDrones = [
-            { id: 1, name: "Drone-01", status: "available", battery_level: 85, current_lat: 30.3165, current_lng: 78.0322 },
-            { id: 2, name: "Drone-02", status: "available", battery_level: 92, current_lat: 30.3255, current_lng: 78.0367 },
-            { id: 3, name: "Drone-03", status: "busy", battery_level: 67, current_lat: 30.3204, current_lng: 78.0301 },
-            { id: 4, name: "Drone-04", status: "available", battery_level: 78, current_lat: 30.3596, current_lng: 78.0815 },
-            { id: 5, name: "Drone-05", status: "available", battery_level: 95, current_lat: 30.3177, current_lng: 78.0339 }
+            { id: 1, name: "Swift-Alpha", status: "available", battery_level: 85, current_lat: 30.3165, current_lng: 78.0322 },
+            { id: 2, name: "Swift-Beta", status: "available", battery_level: 92, current_lat: 30.3255, current_lng: 78.0367 },
+            { id: 3, name: "Swift-Gamma", status: "busy", battery_level: 67, current_lat: 30.3204, current_lng: 78.0301 },
+            { id: 4, name: "Swift-Delta", status: "available", battery_level: 78, current_lat: 30.3596, current_lng: 78.0815 },
+            { id: 5, name: "Swift-Echo", status: "available", battery_level: 95, current_lat: 30.3177, current_lng: 78.0339 },
+            { id: 6, name: "Swift-Foxtrot", status: "available", battery_level: 88, current_lat: 30.3089, current_lng: 78.0435 },
+            { id: 7, name: "Swift-Golf", status: "busy", battery_level: 72, current_lat: 30.3290, current_lng: 78.0267 },
+            { id: 8, name: "Swift-Hotel", status: "available", battery_level: 94, current_lat: 30.3134, current_lng: 78.0404 },
+            { id: 9, name: "Swift-India", status: "maintenance", battery_level: 45, current_lat: 30.3076, current_lng: 78.0272 },
+            { id: 10, name: "Swift-Juliet", status: "available", battery_level: 81, current_lat: 30.3445, current_lng: 78.0661 }
         ];
 
         sampleDrones.forEach(drone => {

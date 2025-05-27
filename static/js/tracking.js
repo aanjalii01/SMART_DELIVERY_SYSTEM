@@ -285,6 +285,219 @@ class OrderTrackingManager {
         }
     }
 
+    initializeAlgorithmVisualizations() {
+        // Initialize Greedy Algorithm visualization for drone selection
+        this.initializeGreedyVisualization();
+        
+        // Initialize Dijkstra Algorithm visualization for route optimization
+        this.initializeDijkstraVisualization();
+    }
+
+    initializeGreedyVisualization() {
+        const greedyContainer = document.getElementById('greedyVisualization');
+        if (!greedyContainer) return;
+
+        // Simulate available drones for greedy algorithm demonstration
+        const availableDrones = [
+            { id: 1, name: 'Swift-Alpha', distance: '2.1 km', battery: 85, status: 'available' },
+            { id: 2, name: 'Swift-Beta', distance: '1.3 km', battery: 92, status: 'available' },
+            { id: 3, name: 'Swift-Delta', distance: '3.7 km', battery: 78, status: 'available' },
+            { id: 4, name: 'Swift-Echo', distance: '0.9 km', battery: 95, status: 'available' },
+            { id: 5, name: 'Swift-Hotel', distance: '4.2 km', battery: 94, status: 'available' }
+        ];
+
+        let stepIndex = 0;
+        const steps = [
+            'Scanning available drones...',
+            'Calculating distances to delivery location...',
+            'Applying greedy selection criteria...',
+            'Selected nearest drone with sufficient battery!'
+        ];
+
+        greedyContainer.innerHTML = `
+            <div class="algorithm-step active" id="greedyStep">
+                <small><strong>Step 1:</strong> ${steps[0]}</small>
+            </div>
+            <div id="droneList"></div>
+        `;
+
+        // Animate through the greedy algorithm steps
+        const interval = setInterval(() => {
+            stepIndex++;
+            if (stepIndex < steps.length) {
+                document.getElementById('greedyStep').innerHTML = `
+                    <small><strong>Step ${stepIndex + 1}:</strong> ${steps[stepIndex]}</small>
+                `;
+                
+                if (stepIndex === 1) {
+                    this.showDroneCandidates(availableDrones);
+                } else if (stepIndex === 2) {
+                    this.applyGreedySelection(availableDrones);
+                } else if (stepIndex === 3) {
+                    this.highlightSelectedDrone(availableDrones);
+                    document.getElementById('greedyStep').classList.add('completed');
+                    clearInterval(interval);
+                }
+            }
+        }, 2000);
+    }
+
+    showDroneCandidates(drones) {
+        const droneList = document.getElementById('droneList');
+        droneList.innerHTML = drones.map(drone => `
+            <div class="drone-candidate" id="drone-${drone.id}">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <strong>🚁 ${drone.name}</strong><br>
+                        <small class="text-muted">Distance: ${drone.distance}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${drone.battery >= 80 ? 'success' : 'warning'}">${drone.battery}%</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    applyGreedySelection(drones) {
+        // Sort by distance (greedy approach - closest first)
+        const sortedDrones = [...drones].sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+        
+        sortedDrones.forEach((drone, index) => {
+            const element = document.getElementById(`drone-${drone.id}`);
+            if (index === 0) {
+                // Closest drone with good battery
+                element.classList.add('selected');
+            } else {
+                element.classList.add('rejected');
+            }
+        });
+    }
+
+    highlightSelectedDrone(drones) {
+        const selectedDrone = drones.find(d => d.distance === '0.9 km'); // Swift-Echo
+        const greedyContainer = document.getElementById('greedyVisualization');
+        
+        greedyContainer.innerHTML += `
+            <div class="alert alert-success mt-3">
+                <div class="d-flex align-items-center">
+                    <i data-feather="check-circle" class="me-2"></i>
+                    <div>
+                        <strong>Selected: ${selectedDrone.name}</strong><br>
+                        <small>Closest drone (${selectedDrone.distance}) with optimal battery (${selectedDrone.battery}%)</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
+    initializeDijkstraVisualization() {
+        const dijkstraContainer = document.getElementById('dijkstraVisualization');
+        if (!dijkstraContainer) return;
+
+        // Simulate warehouse route optimization
+        const warehouses = [
+            { id: 1, name: 'Electronics Hub', distance: 0, visited: false },
+            { id: 2, name: 'Medical Center', distance: Infinity, visited: false },
+            { id: 3, name: 'Grocery Store', distance: Infinity, visited: false }
+        ];
+
+        let stepIndex = 0;
+        const steps = [
+            'Initializing distances to all warehouses...',
+            'Finding shortest path to each warehouse...',
+            'Calculating optimal collection route...',
+            'Route to delivery location optimized!'
+        ];
+
+        dijkstraContainer.innerHTML = `
+            <div class="algorithm-step active" id="dijkstraStep">
+                <small><strong>Step 1:</strong> ${steps[0]}</small>
+            </div>
+            <div id="routeList"></div>
+        `;
+
+        // Animate through Dijkstra algorithm steps
+        const interval = setInterval(() => {
+            stepIndex++;
+            if (stepIndex < steps.length) {
+                document.getElementById('dijkstraStep').innerHTML = `
+                    <small><strong>Step ${stepIndex + 1}:</strong> ${steps[stepIndex]}</small>
+                `;
+                
+                if (stepIndex === 1) {
+                    this.showRouteCalculation(warehouses);
+                } else if (stepIndex === 2) {
+                    this.optimizeRoute(warehouses);
+                } else if (stepIndex === 3) {
+                    this.showOptimalRoute();
+                    document.getElementById('dijkstraStep').classList.add('completed');
+                    clearInterval(interval);
+                }
+            }
+        }, 2500);
+    }
+
+    showRouteCalculation(warehouses) {
+        const routeList = document.getElementById('routeList');
+        routeList.innerHTML = warehouses.map((warehouse, index) => `
+            <div class="route-step" id="route-${warehouse.id}">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <strong>📦 ${warehouse.name}</strong><br>
+                        <small class="text-muted">Distance: ${warehouse.distance === 0 ? '0 km (start)' : warehouse.distance === Infinity ? 'calculating...' : warehouse.distance + ' km'}</small>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary">${warehouse.visited ? 'Visited' : 'Pending'}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    optimizeRoute(warehouses) {
+        // Simulate Dijkstra's algorithm calculations
+        const distances = [
+            { id: 1, distance: '0 km', optimal: true },
+            { id: 2, distance: '2.1 km', optimal: true },
+            { id: 3, distance: '1.8 km', optimal: true }
+        ];
+
+        distances.forEach((calc, index) => {
+            setTimeout(() => {
+                const element = document.getElementById(`route-${calc.id}`);
+                if (calc.optimal) {
+                    element.classList.add('current');
+                    element.querySelector('small').textContent = `Distance: ${calc.distance} (optimal)`;
+                }
+            }, index * 800);
+        });
+    }
+
+    showOptimalRoute() {
+        const dijkstraContainer = document.getElementById('dijkstraVisualization');
+        
+        dijkstraContainer.innerHTML += `
+            <div class="alert alert-success mt-3">
+                <div class="d-flex align-items-center">
+                    <i data-feather="route" class="me-2"></i>
+                    <div>
+                        <strong>Optimal Route Calculated!</strong><br>
+                        <small>Electronics Hub → Grocery Store → Medical Center → Delivery (Total: 5.1 km)</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
     showError(message) {
         const errorContainer = document.getElementById('errorContainer');
         if (errorContainer) {

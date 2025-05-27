@@ -36,14 +36,22 @@ class MapManager {
     }
 
     createCustomIcons() {
-        // Drone icon (blue)
+        // Realistic Drone icon with drone emoji
         this.droneIcon = L.divIcon({
-            html: `<div style="background: #007bff; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                      <i data-feather="navigation" style="width: 16px; height: 16px;"></i>
-                   </div>`,
+            html: `<div style="background: linear-gradient(45deg, #007bff, #0056b3); color: white; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); position: relative;">
+                      <span style="font-size: 18px;">🚁</span>
+                      <div style="position: absolute; top: -8px; right: -8px; width: 12px; height: 12px; background: #28a745; border: 2px solid white; border-radius: 50%; animation: pulse 2s infinite;"></div>
+                   </div>
+                   <style>
+                   @keyframes pulse {
+                     0% { transform: scale(1); opacity: 1; }
+                     50% { transform: scale(1.2); opacity: 0.7; }
+                     100% { transform: scale(1); opacity: 1; }
+                   }
+                   </style>`,
             className: 'drone-marker',
-            iconSize: [30, 30],
-            iconAnchor: [15, 15]
+            iconSize: [35, 35],
+            iconAnchor: [17, 17]
         });
 
         // Warehouse icon (green)
@@ -234,7 +242,7 @@ class MapManager {
         return 'danger';
     }
 
-    animateDroneMovement(droneId, fromCoords, toCoords, duration = 2000) {
+    animateDroneMovement(droneId, fromCoords, toCoords, duration = 3000) {
         const marker = this.markers.get(`drone-${droneId}`);
         if (!marker) return;
 
@@ -242,20 +250,65 @@ class MapManager {
         const [startLat, startLng] = fromCoords;
         const [endLat, endLng] = toCoords;
 
+        // Create trail effect for Dijkstra path visualization
+        const trailPoints = [];
+        const trailPolyline = L.polyline([], {
+            color: '#ffc107',
+            weight: 3,
+            opacity: 0.8,
+            dashArray: '5, 10'
+        }).addTo(this.map);
+
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
 
-            // Easing function for smooth animation
-            const easedProgress = 1 - Math.pow(1 - progress, 3);
+            // Dijkstra-style stepped movement (simulating algorithm steps)
+            let easedProgress;
+            if (progress < 0.1) {
+                // Initial calculation phase - drone pauses to calculate
+                easedProgress = 0;
+            } else if (progress < 0.3) {
+                // Route optimization phase - slow initial movement
+                easedProgress = (progress - 0.1) * 0.2 / 0.2;
+            } else {
+                // Optimized movement phase - smooth efficient flight
+                const movementProgress = (progress - 0.3) / 0.7;
+                easedProgress = 0.2 + 0.8 * (1 - Math.pow(1 - movementProgress, 2));
+            }
 
             const currentLat = startLat + (endLat - startLat) * easedProgress;
             const currentLng = startLng + (endLng - startLng) * easedProgress;
 
             marker.setLatLng([currentLat, currentLng]);
 
+            // Add to trail for path visualization showing Dijkstra route
+            if (progress > 0.3) {
+                trailPoints.push([currentLat, currentLng]);
+                trailPolyline.setLatLngs(trailPoints);
+            }
+
+            // Add pulse effect during calculation phases to show algorithm working
+            if (progress < 0.3) {
+                const pulseIntensity = Math.sin(elapsed / 300) * 0.2 + 1;
+                if (marker.getElement()) {
+                    marker.getElement().style.transform = `scale(${pulseIntensity})`;
+                }
+            } else {
+                if (marker.getElement()) {
+                    marker.getElement().style.transform = 'scale(1)';
+                }
+            }
+
             if (progress < 1) {
                 requestAnimationFrame(animate);
+            } else {
+                // Clean up trail after animation
+                setTimeout(() => {
+                    if (trailPolyline) {
+                        this.map.removeLayer(trailPolyline);
+                    }
+                }, 3000);
             }
         };
 

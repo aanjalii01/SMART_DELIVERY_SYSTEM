@@ -38,6 +38,43 @@
   --border: 210 8% 25%; /* #4A4D55 */
 }
 
+/* Dark theme text fixes */
+[data-theme="dark"] .text-muted {
+  color: hsl(210 8% 65%) !important;
+}
+
+[data-theme="dark"] .card-text {
+  color: hsl(210 8% 75%) !important;
+}
+
+[data-theme="dark"] .small,
+[data-theme="dark"] small {
+  color: hsl(210 8% 70%) !important;
+}
+
+[data-theme="dark"] .breadcrumb-item a {
+  color: hsl(210 8% 75%) !important;
+}
+
+[data-theme="dark"] .nav-link {
+  color: hsl(210 8% 75%) !important;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: hsl(210 11% 95%) !important;
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: hsl(210 11% 20%) !important;
+  color: hsl(210 11% 95%) !important;
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background-color: hsl(210 11% 16%) !important;
+  border-color: hsl(210 8% 25%) !important;
+}
+
 /* Base styles */
 * {
   box-sizing: border-box;

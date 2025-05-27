@@ -103,6 +103,26 @@ class OrderTrackingManager {
             }
         }
 
+        // Update next destination info
+        const nextDestination = document.getElementById('nextDestination');
+        if (nextDestination) {
+            const nextStop = this.getNextDestination(orderData);
+            nextDestination.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i data-feather="navigation" class="me-2 text-primary" style="width: 16px; height: 16px;"></i>
+                    <div>
+                        <strong>Next Stop:</strong><br>
+                        <small class="text-muted">${nextStop}</small>
+                    </div>
+                </div>
+            `;
+            
+            // Re-render feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }
+
         // Update status timeline
         this.updateStatusTimeline(orderData.status, orderData.progress_percentage);
     }
@@ -234,6 +254,35 @@ class OrderTrackingManager {
         if (level >= 60) return 'success';
         if (level >= 30) return 'warning';
         return 'danger';
+    }
+
+    getNextDestination(orderData) {
+        // Determine next destination based on order status and route
+        if (orderData.status === 'pending' || orderData.status === 'confirmed') {
+            // If order is just confirmed, drone is heading to first warehouse
+            if (orderData.route && orderData.route.length > 0) {
+                return orderData.route[0].name || 'First Warehouse';
+            }
+            return 'Preparing for pickup';
+        } else if (orderData.status === 'in_transit') {
+            // Drone is en route - determine current leg of journey
+            const progress = orderData.progress_percentage || 0;
+            
+            if (progress < 50) {
+                // Still collecting items from warehouses
+                if (orderData.route && orderData.route.length > 1) {
+                    return `${orderData.route[1].name || 'Next Warehouse'}`;
+                }
+                return 'Collecting items';
+            } else {
+                // Heading to delivery location
+                return 'Your delivery location';
+            }
+        } else if (orderData.status === 'delivered') {
+            return 'Order completed';
+        } else {
+            return 'Route calculation';
+        }
     }
 
     showError(message) {

@@ -168,7 +168,7 @@
                         Live Tracking
                     </h6>
                     <div class="d-flex align-items-center">
-                        {% if order.assigned_drone and current_user.user_type in ['admin', 'vendor'] %}
+                        {% if order.assigned_drone %}
                         <div class="me-3">
                             <small class="text-muted">Drone Battery:</small>
                             <span class="fw-medium" id="droneBattery">{{ order.assigned_drone.battery_level }}%</span>
@@ -176,6 +176,17 @@
                                 <div class="progress-bar bg-{{ 'success' if order.assigned_drone.battery_level >= 60 else 'warning' if order.assigned_drone.battery_level >= 30 else 'danger' }}" 
                                      id="batteryBar"
                                      style="width: {{ order.assigned_drone.battery_level }}%"></div>
+                            </div>
+                        </div>
+                        <div class="me-3">
+                            <div id="nextDestination">
+                                <div class="d-flex align-items-center">
+                                    <i data-feather="navigation" class="me-2 text-primary" style="width: 16px; height: 16px;"></i>
+                                    <div>
+                                        <small class="text-muted">Next Stop:</small><br>
+                                        <small class="fw-medium">Calculating route...</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {% endif %}

@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %}Track Order #{{ order.id }} - Swiftpath{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Order Header -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        {% if current_user.user_type == 'customer' %}
+                            <a href="{{ url_for('customer_dashboard') }}">Dashboard</a>
+                        {% else %}
+                            <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+                        {% endif %}
+                    </li>
+                    <li class="breadcrumb-item active">Track Order #{{ order.id }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex align-items-center mb-3">
+                <h1 class="display-6 fw-bold me-3">Order #{{ order.id }}</h1>
+                <span class="order-status {{ order.status }}" id="orderStatus">{{ order.status|title }}</span>
+            </div>
+            
+            <p class="text-muted mb-0">
+                Placed on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                {% if order.order_type == 'fast' %}
+                    <span class="badge bg-warning text-dark ms-2">Fast Delivery</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+            <button class="btn btn-outline-primary me-2" id="refreshBtn">
+                <i data-feather="refresh-cw"></i>
+                Refresh
+            </button>
+            <div class="form-check form-switch d-inline-block">
+                <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                <label class="form-check-label" for="autoRefreshToggle">
+                    Auto-refresh
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Container -->
+    <div id="errorContainer"></div>
+
+    <div class="row g-4">
+        <!-- Order Progress & Details -->
+        <div class="col-lg-4">
+            <!-- Progress Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="activity" class="me-2"></i>
+                        Delivery Progress
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="display-6 fw-bold text-primary" id="progressText">0%</div>
+                        <small class="text-muted">Complete</small>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar" 
+                             id="progressBar"
+                             role="progressbar" 
+                             style="width: 0%" 
+                             aria-valuenow="0" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100"></div>
+                    </div>
+                    
+                    {% if order.estimated_delivery_time %}
+                    <div class="text-center">
+                        <small class="text-muted">
+                            <i data-feather="clock" class="me-1"></i>
+                            Estimated delivery: <span id="estimatedDelivery">{{ order.estimated_delivery_time.strftime('%I:%M %p') }}</span>
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Algorithm Visualization -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="cpu" class="me-2"></i>
+                        Algorithm Optimization in Action
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <!-- Greedy Algorithm - Drone Assignment -->
+                        <div class="col-md-6">
+                            <div class="algorithm-section">
+                                <h6 class="text-primary mb-3">
+                                    <i data-feather="zap" class="me-2"></i>
+                                    Greedy Algorithm: Drone Selection
+                                </h6>
+                                <div id="greedyVisualization" class="algorithm-viz">
+                                    <div class="text-center py-3">
+                                        <div class="spinner"></div>
+                                        <p class="small text-muted mt-2">Analyzing available drones...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dijkstra Algorithm - Route Optimization -->
+                        <div class="col-md-6">
+                            <div class="algorithm-section">
+                                <h6 class="text-success mb-3">
+                                    <i data-feather="navigation" class="me-2"></i>
+                                    Dijkstra Algorithm: Route Optimization
+                                </h6>
+                                <div id="dijkstraVisualization" class="algorithm-viz">
+                                    <div class="text-center py-3">
+                                        <div class="spinner"></div>
+                                        <p class="small text-muted mt-2">Calculating optimal route...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Timeline -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="clock" class="me-2"></i>
+                        Order Timeline
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="statusTimeline">
+                        <!-- Timeline will be populated by JavaScript -->
+                        <div class="text-center py-3">
+                            <div class="spinner"></div>
+                            <p class="small text-muted mt-2">Loading timeline...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Details -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="package" class="me-2"></i>
+                        Order Details
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <small class="text-muted">Order Type</small>
+                            <div class="fw-medium">{{ order.order_type|title }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Total Weight</small>
+                            <div class="fw-medium">{{ order.total_weight or 'Not specified' }}{% if order.total_weight %}kg{% endif %}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Items Count</small>
+                            <div class="fw-medium">{{ order.get_items_list()|length }} item(s)</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Customer</small>
+                            <div class="fw-medium">{{ order.customer.full_name or order.customer.username }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Items List -->
+                    {% set items = order.get_items_list() %}
+                    {% if items %}
+                    <hr class="my-3">
+                    <small class="text-muted">Items Ordered</small>
+                    <div class="mt-2">
+                        {% for item in items %}
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="me-2">📦</span>
+                            <span class="small">{{ item.product }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Delivery Address -->
+                    {% if order.delivery_address %}
+                    <hr class="my-3">
+                    <small class="text-muted">Delivery Address</small>
+                    <div class="small mt-1">{{ order.delivery_address }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Map Tracking -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i data-feather="map" class="me-2"></i>
+                        Live Tracking
+                    </h6>
+                    <div class="d-flex align-items-center">
+                        {% if order.assigned_drone %}
+                        <div class="me-3">
+                            <small class="text-muted">Drone Battery:</small>
+                            <span class="fw-medium" id="droneBattery">{{ order.assigned_drone.battery_level }}%</span>
+                            <div class="progress mt-1" style="height: 4px; width: 60px;">
+                                <div class="progress-bar bg-{{ 'success' if order.assigned_drone.battery_level >= 60 else 'warning' if order.assigned_drone.battery_level >= 30 else 'danger' }}" 
+                                     id="batteryBar"
+                                     style="width: {{ order.assigned_drone.battery_level }}%"></div>
+                            </div>
+                        </div>
+                        <div class="me-3">
+                            <div id="nextDestination">
+                                <div class="d-flex align-items-center">
+                                    <i data-feather="navigation" class="me-2 text-primary" style="width: 16px; height: 16px;"></i>
+                                    <div>
+                                        <small class="text-muted">Next Stop:</small><br>
+                                        <small class="fw-medium">Calculating route...</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" onclick="centerMap()">
+                                <i data-feather="crosshair"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="toggleMapType()">
+                                <i data-feather="layers"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="map-container large" id="trackingMap" data-order-id="{{ order.id }}">
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                            <div class="text-center">
+                                <div class="spinner mb-3"></div>
+                                <p>Loading tracking map...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="row text-center g-3">
+                        <div class="col-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="bg-primary rounded-circle me-2" style="width: 12px; height: 12px;"></div>
+                                <small class="fw-medium">Planned Route</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="bg-success rounded-circle me-2" style="width: 12px; height: 12px;"></div>
+                                <small class="fw-medium">Warehouses</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="bg-warning rounded-circle me-2" style="width: 12px; height: 12px;"></div>
+                                <small class="fw-medium">Drone</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="bg-danger rounded-circle me-2" style="width: 12px; height: 12px;"></div>
+                                <small class="fw-medium">Delivery</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drone Information (Admin Only) -->
+            {% if order.assigned_drone and current_user.user_type in ['admin', 'vendor'] %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="navigation" class="me-2"></i>
+                        Assigned Drone
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <small class="text-muted">Drone Name</small>
+                            <div class="fw-medium">{{ order.assigned_drone.name }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Status</small>
+                            <div class="drone-status {{ order.assigned_drone.status }}">
+                                <div class="drone-status-dot"></div>
+                                {{ order.assigned_drone.status|title }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Battery Level</small>
+                            <div class="fw-medium">{{ order.assigned_drone.battery_level }}%</div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Max Capacity</small>
+                            <div class="fw-medium">{{ order.assigned_drone.max_weight }}kg</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action Buttons (Admin Only) -->
+    {% if current_user.user_type in ['admin', 'vendor'] and order.status == 'pending' %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-warning mb-1">Order Approval Required</h6>
+                            <p class="text-muted mb-0">This order is pending your approval before drone dispatch.</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-success me-2 approve-order-btn" data-order-id="{{ order.id }}">
+                                <i data-feather="check"></i>
+                                Approve Order
+                            </button>
+                            <button class="btn btn-danger deny-order-btn" data-order-id="{{ order.id }}">
+                                <i data-feather="x"></i>
+                                Deny Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Share Order (Customer Only) -->
+    {% if current_user.user_type == 'customer' %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h6 class="text-info mb-1">Share Tracking</h6>
+                            <p class="text-muted mb-0">Share this tracking link with others to let them follow your delivery.</p>
+                        </div>
+                        <div class="col-lg-4 text-lg-end">
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       id="trackingUrl" 
+                                       value="{{ request.url }}" 
+                                       readonly>
+                                <button class="btn btn-outline-info btn-sm" onclick="copyTrackingUrl()">
+                                    <i data-feather="copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const orderId = {{ order.id | safe }}; // Use |safe to prevent auto-escaping by Jinja
+
+    // Fetch and show algorithm results
+    fetch(`/api/algorithm_result/${orderId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById("greedyVisualization").innerHTML = `<p class="text-danger">${data.error}</p>`;
+                document.getElementById("dijkstraVisualization").innerHTML = `<p class="text-danger">${data.error}</p>`;
+                return;
+            }
+
+            // Greedy Algorithm Output
+            document.getElementById("greedyVisualization").innerHTML = `
+                <p class="small text-muted">Assigned Drone:</p>
+                <div class="fw-medium text-center">${data.drone}</div>
+            `;
+
+            // Dijkstra Route Output
+            const pathHtml = data.route.map((loc, i) => `${i + 1}. ${loc}`).join("<br>");
+            document.getElementById("dijkstraVisualization").innerHTML = `
+                <p class="small text-muted">Optimal Route:</p>
+                <div class="fw-medium">${pathHtml}</div>
+            `;
+        });
+
+    // Leaflet Map Initialization
+    const mapContainer = document.getElementById('trackingMap');
+    let map = L.map('trackingMap').setView([28.61, 77.23], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    const droneIcon = L.icon({
+        iconUrl: '/static/img/drone-icon.png',
+        iconSize: [30, 30],
+    });
+
+    let droneMarker = null;
+    let polyline = null;
+    let intervalId = null;
+
+    function updateTracking() {
+        fetch(`/api/order_status/${orderId}`)
+            .then(res => res.json())
+            .then(data => {
+                const { current_location, route, progress_percentage } = data;
+
+                // Update drone marker
+                const latlng = [current_location.lat, current_location.lng];
+                if (!droneMarker) {
+                    droneMarker = L.marker(latlng, { icon: droneIcon }).addTo(map);
+                } else {
+                    droneMarker.setLatLng(latlng);
+                }
+
+                // Draw path once
+                const routeCoords = route.map(p => [p.lat, p.lng]);
+                if (!polyline) {
+                    polyline = L.polyline(routeCoords, { color: 'blue' }).addTo(map);
+                    map.fitBounds(polyline.getBounds());
+                }
+
+                // Update progress bar
+                document.getElementById("progressText").textContent = `${Math.floor(progress_percentage)}%`;
+                document.getElementById("progressBar").style.width = `${progress_percentage}%`;
+
+                // Show next destination
+                if (route.length > 1) {
+                    const nextStop = route[1].name;
+                    const nextStopElem = document.querySelector("#nextDestination small.fw-medium");
+                    if (nextStopElem) nextStopElem.textContent = nextStop;
+                }
+            });
+    }
+
+    // Initial call and interval
+    updateTracking();
+    intervalId = setInterval(updateTracking, 3000);
+
+    // Auto-refresh toggle
+    const toggle = document.getElementById("autoRefreshToggle");
+    if (toggle) {
+        toggle.addEventListener("change", function () {
+            if (this.checked) {
+                updateTracking();
+                intervalId = setInterval(updateTracking, 3000);
+            } else {
+                clearInterval(intervalId);
+            }
+        });
+    }
+});
+</script>
+
+
+<script>
+// Map control functions
+function centerMap() {
+    if (window.orderTracker && window.orderTracker.map) {
+        window.orderTracker.map.fitBounds();
+    }
+}
+
+function toggleMapType() {
+    // In a real implementation, this would switch between map types
+    console.log('Toggle map type feature would be implemented here');
+}
+
+function copyTrackingUrl() {
+    const urlInput = document.getElementById('trackingUrl');
+    if (urlInput) {
+        urlInput.select();
+        document.execCommand('copy');
+        
+        // Show feedback
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i data-feather="check"></i>';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-info');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-info');
+            feather.replace();
+        }, 2000);
+        
+        feather.replace();
+    }
+}
+
+// Auto-refresh functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    
+    if (autoRefreshToggle) {
+        autoRefreshToggle.addEventListener('change', function() {
+            if (window.orderTracker) {
+                if (this.checked) {
+                    window.orderTracker.startTracking();
+                } else {
+                    window.orderTracker.stopTracking();
+                }
+            }
+        });
+    }
+});
+
+// Custom CSS for timeline
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .status-timeline {
+            position: relative;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 2.5rem;
+            padding-bottom: 1.5rem;
+        }
+        
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            top: 2rem;
+            bottom: -0.5rem;
+            width: 2px;
+            background-color: hsl(var(--border));
+        }
+        
+        .timeline-item.active:not(:last-child)::after {
+            background-color: hsl(var(--primary-color));
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2rem;
+            height: 2rem;
+            background-color: hsl(var(--surface));
+            border: 2px solid hsl(var(--border));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .timeline-item.active .timeline-marker {
+            background-color: hsl(var(--primary-color));
+            border-color: hsl(var(--primary-color));
+            color: white;
+        }
+        
+        .timeline-item.current .timeline-marker {
+            animation: pulse 2s infinite;
+        }
+        
+        .timeline-dot {
+            width: 8px;
+            height: 8px;
+            background-color: hsl(var(--border));
+            border-radius: 50%;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 hsl(var(--primary-color) / 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px hsl(var(--primary-color) / 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 hsl(var(--primary-color) / 0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+</script>
+
+
+{% endblock %}

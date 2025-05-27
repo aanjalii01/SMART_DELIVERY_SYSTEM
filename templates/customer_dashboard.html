@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Dashboard - Swiftpath{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<section class="dashboard-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-6 fw-bold mb-2">
+                    Welcome back, {{ current_user.full_name or current_user.username }}!
+                </h1>
+                <p class="lead mb-0 opacity-90">
+                    Ready to place a new order or track your deliveries?
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('place_order') }}" class="btn btn-light btn-lg shadow-sm">
+                    <i data-feather="plus-circle"></i>
+                    Place New Order
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-4">
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="stat-number">{{ orders|length }}</div>
+                    <div class="stat-label">Total Orders</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="stat-number">
+                        {{ orders|selectattr('status', 'equalto', 'in_transit')|list|length }}
+                    </div>
+                    <div class="stat-label">Active Deliveries</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="stat-number">
+                        {{ orders|selectattr('status', 'equalto', 'delivered')|list|length }}
+                    </div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="stat-number">{{ drones|selectattr('status', 'equalto', 'available')|list|length }}</div>
+                    <div class="stat-label">Available Drones</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent Orders -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="package" class="me-2"></i>
+                        Recent Orders
+                    </h5>
+                    <a href="{{ url_for('place_order') }}" class="btn btn-sm btn-outline-primary">
+                        <i data-feather="plus"></i>
+                        New Order
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if orders %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Items</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in orders %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-medium">#{{ order.id }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                {% set items = order.get_items_list() %}
+                                                {% if items %}
+                                                    {{ items|length }} item(s)
+                                                    {% if order.total_weight %}
+                                                        <br><small class="text-muted">{{ order.total_weight }}kg</small>
+                                                    {% endif %}
+                                                {% else %}
+                                                    No items
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="order-status {{ order.status }}">
+                                                {{ order.status|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                {{ order.created_at.strftime('%b %d, %Y') }}<br>
+                                                <span class="text-muted">{{ order.created_at.strftime('%I:%M %p') }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('track_order', order_id=order.id) }}" 
+                                                   class="btn btn-outline-primary"
+                                                   title="Track Order">
+                                                    <i data-feather="eye"></i>
+                                                </a>
+                                                {% if order.status in ['pending', 'confirmed'] %}
+                                                <button class="btn btn-outline-secondary" 
+                                                        title="Cancel Order"
+                                                        onclick="cancelOrder({{ order.id }})">
+                                                    <i data-feather="x"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i data-feather="package" style="width: 48px; height: 48px;" class="text-muted"></i>
+                            </div>
+                            <h6 class="text-muted">No orders yet</h6>
+                            <p class="text-muted mb-3">Start your drone delivery experience today!</p>
+                            <a href="{{ url_for('place_order') }}" class="btn btn-primary">
+                                <i data-feather="plus-circle"></i>
+                                Place Your First Order
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Drone Availability Map -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="map" class="me-2"></i>
+                        Nearby Drones
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="map-container" id="droneMap">
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                            <div class="text-center">
+                                <div class="spinner mb-3"></div>
+                                <p>Loading drone locations...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="small">
+                                <div class="fw-bold text-success">{{ drones|selectattr('status', 'equalto', 'available')|list|length }}</div>
+                                <div class="text-muted">Available</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small">
+                                <div class="fw-bold text-warning">{{ drones|selectattr('status', 'equalto', 'busy')|list|length }}</div>
+                                <div class="text-muted">Busy</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small">
+                                <div class="fw-bold text-danger">{{ drones|selectattr('status', 'equalto', 'maintenance')|list|length }}</div>
+                                <div class="text-muted">Maintenance</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mt-4">
+        <div class="col-lg-12">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h5 class="text-primary mb-2">
+                                <i data-feather="zap" class="me-2"></i>
+                                Quick Order
+                            </h5>
+                            <p class="text-muted mb-0">
+                                Need something delivered fast? Use our quick order feature to get items from nearby warehouses 
+                                delivered in under 30 minutes.
+                            </p>
+                        </div>
+                        <div class="col-lg-4 text-lg-end">
+                            <a href="{{ url_for('place_order') }}" class="btn btn-primary btn-lg">
+                                <i data-feather="send"></i>
+                                Start Quick Order
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Areas -->
+    <div class="row g-4 mt-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="map-pin" class="me-2"></i>
+                        Service Areas & Warehouses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-center p-3 bg-surface rounded">
+                                <div class="feature-icon me-3" style="width: 40px; height: 40px;">
+                                    <i data-feather="laptop" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Electronics Hub</h6>
+                                    <small class="text-muted">Dehradun Central</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-center p-3 bg-surface rounded">
+                                <div class="feature-icon me-3" style="width: 40px; height: 40px;">
+                                    <i data-feather="heart" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Medical Center</h6>
+                                    <small class="text-muted">ISBT Dehradun</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-center p-3 bg-surface rounded">
+                                <div class="feature-icon me-3" style="width: 40px; height: 40px;">
+                                    <i data-feather="coffee" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Food Court</h6>
+                                    <small class="text-muted">Paltan Bazaar</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-center p-3 bg-surface rounded">
+                                <div class="feature-icon me-3" style="width: 40px; height: 40px;">
+                                    <i data-feather="book" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Books & Stationery</h6>
+                                    <small class="text-muted">Rajpur Road</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-center p-3 bg-surface rounded">
+                                <div class="feature-icon me-3" style="width: 40px; height: 40px;">
+                                    <i data-feather="shopping-cart" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Grocery Store</h6>
+                                    <small class="text-muted">Clock Tower</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-center p-3 bg-surface rounded">
+                                <div class="feature-icon me-3" style="width: 40px; height: 40px;">
+                                    <i data-feather="plus" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">More Coming Soon</h6>
+                                    <small class="text-muted">Expanding coverage</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize drone map
+    try {
+        const droneMap = new DashboardMapManager('droneMap');
+        
+        // Add user location if available
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                droneMap.addUserLocationMarker(
+                    position.coords.latitude, 
+                    position.coords.longitude
+                );
+            }, function(error) {
+                console.log('Geolocation not available');
+            });
+        }
+        
+        // Refresh drone data every 30 seconds
+        setInterval(() => {
+            if (droneMap && typeof droneMap.refreshDroneData === 'function') {
+                droneMap.refreshDroneData();
+            }
+        }, 30000);
+        
+    } catch (error) {
+        console.error('Error initializing drone map:', error);
+        const mapContainer = document.getElementById('droneMap');
+        if (mapContainer) {
+            mapContainer.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                    <div class="text-center">
+                        <i data-feather="map-off" style="width: 48px; height: 48px;" class="mb-3"></i>
+                        <p>Map temporarily unavailable</p>
+                    </div>
+                </div>
+            `;
+            feather.replace();
+        }
+    }
+});
+
+function cancelOrder(orderId) {
+    if (confirm('Are you sure you want to cancel this order?')) {
+        // In a real implementation, this would make an API call
+        alert('Order cancellation feature will be implemented with backend integration.');
+    }
+}
+
+// Auto-refresh order status for active deliveries
+function refreshOrderStatus() {
+    const activeOrders = document.querySelectorAll('.order-status.in_transit, .order-status.confirmed');
+    if (activeOrders.length > 0) {
+        // In a real implementation, this would fetch updated order status
+        console.log('Refreshing status for active orders...');
+    }
+}
+
+// Refresh every 30 seconds if there are active orders
+setInterval(refreshOrderStatus, 30000);
+</script>
+{% endblock %}

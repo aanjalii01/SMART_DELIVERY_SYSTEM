@@ -411,19 +411,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Address validation
+    // Address validation (optional field)
     const addressInput = document.getElementById('delivery_address');
     if (addressInput) {
         addressInput.addEventListener('input', function() {
-            if (this.value.trim().length >= 10) {
-                this.classList.remove('is-invalid');
-                this.classList.add('is-valid');
-            } else if (this.value.trim().length > 0) {
-                this.classList.add('is-invalid');
-                this.classList.remove('is-valid');
-            } else {
-                this.classList.remove('is-invalid', 'is-valid');
-            }
+            // Remove any previous validation classes since address is optional
+            this.classList.remove('is-invalid', 'is-valid');
         });
     }
     

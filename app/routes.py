@@ -1,17 +1,26 @@
-from flask import render_template, request, redirect, url_for, flash, jsonify, session
+from flask import (
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    jsonify,
+    session,
+    current_app as app,
+)
+
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+
 from .extensions import db
-from flask import current_app as app
 from .models import User, Order, Drone, Warehouse, DeliveryRoute
+
 import json
 import heapq
 import math
-from datetime import datetime, timedelta
 import logging
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from .models import User, Order, Drone, Warehouse, DeliveryRoute
-from .extensions import db
+
+from datetime import datetime, timedelta
 
 # Your route definitions...
 

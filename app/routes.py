@@ -1,17 +1,13 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from .extensions import db
 from flask import current_app as app
+from .extensions import db
 from .models import User, Order, Drone, Warehouse, DeliveryRoute
+from .utils import calculate_optimized_route, choose_best_drone
 import json
-import heapq
-import math
 from datetime import datetime, timedelta
 import logging
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from .models import User, Order, Drone, Warehouse, DeliveryRoute
-from .extensions import db
 
 # Your route definitions...
 
@@ -177,13 +173,14 @@ def place_order():
             'name': 'Delivery Location'
         }
         
-        optimized_route = calculate_optimized_route(warehouse_locations, delivery_location)
-        
-        # Find available drone
-        available_drone = Drone.query.filter_by(status='available').first()
-        if not available_drone:
-            flash('No drones available at the moment. Please try again later.', 'error')
+        available_drones = Drone.query.filter_by(status='available').all()
+        assignment = choose_best_drone(available_drones, warehouse_locations, delivery_location, total_weight)
+        if not assignment or not assignment['drone']:
+            flash('No available drone can handle this load or route at the moment. Please try again later.', 'error')
             return redirect(url_for('place_order'))
+
+        available_drone = assignment['drone']
+        optimized_route = assignment['route']
         
         # Create order
         order = Order(
@@ -304,62 +301,6 @@ def api_deny_order(order_id):
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Order denied successfully'})
-
-def calculate_distance(lat1, lng1, lat2, lng2):
-    """Calculate distance between two points using Haversine formula"""
-    R = 6371  # Earth's radius in kilometers
-    
-    dlat = math.radians(lat2 - lat1)
-    dlng = math.radians(lng2 - lng1)
-    
-    a = math.sin(dlat/2) * math.sin(dlat/2) + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng/2) * math.sin(dlng/2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    
-    return R * c
-
-def calculate_optimized_route(warehouses, delivery_location):
-    """Calculate optimized route using Dijkstra-like algorithm"""
-    all_locations = warehouses + [delivery_location]
-    n = len(all_locations)
-    
-    # Create distance matrix
-    distances = [[0] * n for _ in range(n)]
-    for i in range(n):
-        for j in range(n):
-            if i != j:
-                distances[i][j] = calculate_distance(
-                    all_locations[i]['lat'], all_locations[i]['lng'],
-                    all_locations[j]['lat'], all_locations[j]['lng']
-                )
-    
-    # Find optimal path visiting all warehouses and ending at delivery
-    # For simplicity, using nearest neighbor heuristic
-    visited = [False] * (n-1)  # Exclude delivery location from visited check
-    route = []
-    current = 0  # Start from first warehouse
-    
-    while len(route) < len(warehouses):
-        route.append(all_locations[current])
-        if current < len(warehouses):
-            visited[current] = True
-        
-        # Find nearest unvisited warehouse
-        min_dist = float('inf')
-        next_location = -1
-        
-        for i in range(len(warehouses)):
-            if not visited[i] and distances[current][i] < min_dist:
-                min_dist = distances[current][i]
-                next_location = i
-        
-        if next_location == -1:
-            break
-        current = next_location
-    
-    # Add delivery location at the end
-    route.append(delivery_location)
-    
-    return route
 
 def simulate_drone_progress(order):
     """Simulate drone progress based on order creation time"""

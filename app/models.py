@@ -30,9 +30,25 @@ class Warehouse(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def get_products_list(self):
-        if self.products:
-            return self.products.split(',')
-        return []
+        """Return warehouse products as a list.
+
+        Supports two storage formats:
+        - JSON array (preferred): '["Laptops", "Smartphones"]'
+        - Legacy comma-separated string: 'Laptops,Smartphones'
+
+        Returns an empty list for None, empty, or malformed values.
+        """
+        if not self.products or not self.products.strip():
+            return []
+        try:
+            parsed = json.loads(self.products)
+            if isinstance(parsed, list):
+                return [str(item).strip() for item in parsed if str(item).strip()]
+            # JSON but not an array — fall through to CSV
+        except (json.JSONDecodeError, ValueError):
+            pass
+        # Legacy CSV fallback
+        return [p.strip() for p in self.products.split(',') if p.strip()]
 
 class Drone(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -137,20 +137,71 @@ def place_order():
         return redirect(url_for('index'))
     
     if request.method == 'POST':
-        # Get form data
+        # ── Server-side validation ────────────────────────────────────────────
+        errors = []
+
+        # 1. Items must be present and well-formed ("warehouse_id:product_name")
         selected_items = request.form.getlist('items')
-        total_weight = float(request.form.get('total_weight', 0))
+        if not selected_items:
+            errors.append('Please select at least one item.')
+        for item in selected_items:
+            if ':' not in item or len(item.split(':', 1)) != 2:
+                errors.append(f'Malformed item entry: "{item}". Expected format warehouse_id:product.')
+                break
+
+        # 2. Coordinates must be present and within valid ranges
+        try:
+            delivery_lat = float(request.form.get('delivery_lat', ''))
+            delivery_lng = float(request.form.get('delivery_lng', ''))
+            if not (-90 <= delivery_lat <= 90):
+                errors.append('Delivery latitude must be between -90 and 90.')
+            if not (-180 <= delivery_lng <= 180):
+                errors.append('Delivery longitude must be between -180 and 180.')
+        except (ValueError, TypeError):
+            errors.append('Invalid or missing delivery coordinates.')
+            delivery_lat = delivery_lng = None
+
+        # 3. Weight must be a positive number
+        try:
+            total_weight = float(request.form.get('total_weight', ''))
+            if total_weight <= 0:
+                errors.append('Total weight must be a positive number.')
+        except (ValueError, TypeError):
+            errors.append('Invalid or missing total weight.')
+            total_weight = 0
+
+        # 4. Validate that all referenced warehouse IDs actually exist
+        valid_warehouse_ids = set()
+        if not errors:
+            for item in selected_items:
+                raw_id = item.split(':', 1)[0]
+                try:
+                    wid = int(raw_id)
+                except ValueError:
+                    errors.append(f'Non-integer warehouse ID: "{raw_id}".')
+                    break
+                if wid not in valid_warehouse_ids:
+                    if not Warehouse.query.get(wid):
+                        errors.append(f'Warehouse with ID {wid} does not exist.')
+                    valid_warehouse_ids.add(wid)
+
+        if errors:
+            for msg in errors:
+                flash(msg, 'error')
+            warehouses = Warehouse.query.all()
+            return render_template('place_order.html', warehouses=warehouses), 422
+        # ── End validation ────────────────────────────────────────────────────
+
         order_type = request.form.get('order_type', 'normal')
-        delivery_lat = float(request.form.get('delivery_lat'))
-        delivery_lng = float(request.form.get('delivery_lng'))
         delivery_address = request.form.get('delivery_address')
         
         # Process selected items and find required warehouses
+        # (items are already validated above — safe to unpack)
         items_data = []
         required_warehouses = set()
-        
+
         for item in selected_items:
-            warehouse_id, product_name = item.split(':')
+            warehouse_id, product_name = item.split(':', 1)
             items_data.append({
                 'warehouse_id': int(warehouse_id),
                 'product': product_name,
@@ -433,6 +484,8 @@ def api_warehouses():
             'id': w.id,
             'name': w.name,
             'lat': w.lat,
-            'lng': w.lng
+            'lng': w.lng,
+            'location': w.location,
+            'products': w.get_products_list()
         } for w in warehouses
     ])

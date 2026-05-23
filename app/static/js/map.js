@@ -409,21 +409,29 @@ class DeliveryLocationMapManager extends MapManager {
     }
 
     async loadWarehouses() {
-        // Sample warehouses for Dehradun
-        const warehouses = [
-            { id: 1, name: 'Electronics Hub', lat: 30.3204, lng: 78.0361, type: 'electronics' },
-            { id: 2, name: 'Medical Supplies', lat: 30.3089, lng: 78.0435, type: 'medical' },
-            { id: 3, name: 'Fresh Foods', lat: 30.3290, lng: 78.0267, type: 'food' },
-            { id: 4, name: 'Book Store', lat: 30.3134, lng: 78.0404, type: 'books' },
-            { id: 5, name: 'Grocery Central', lat: 30.3076, lng: 78.0272, type: 'grocery' }
-        ];
-
-        warehouses.forEach(warehouse => {
-            this.addWarehouseMarker(warehouse.id, warehouse.lat, warehouse.lng, {
-                name: warehouse.name,
-                type: warehouse.type
+        try {
+            const response = await fetch('/api/warehouses');
+            if (!response.ok) {
+                throw new Error(`API responded with status ${response.status}`);
+            }
+            const warehouses = await response.json();
+            if (!Array.isArray(warehouses) || warehouses.length === 0) {
+                console.warn('No warehouses returned from API.');
+                return;
+            }
+            warehouses.forEach(warehouse => {
+                if (warehouse.lat == null || warehouse.lng == null) return;
+                this.addWarehouseMarker(warehouse.id, warehouse.lat, warehouse.lng, {
+                    name: warehouse.name,
+                    location: warehouse.location || '',
+                    products: Array.isArray(warehouse.products)
+                        ? warehouse.products.join(', ')
+                        : (warehouse.products || '')
+                });
             });
-        });
+        } catch (error) {
+            console.error('Failed to load warehouses from API:', error);
+        }
     }
 }
 
@@ -454,23 +462,29 @@ class DashboardMapManager extends MapManager {
     }
 
     async loadWarehouses() {
-        // Enhanced warehouse network for better algorithm demonstration
-        const warehouses = [
-            { id: 1, name: "Electronics Hub", lat: 30.3165, lng: 78.0322, location: "Dehradun Central", products: "Laptops, Smartphones, Tablets" },
-            { id: 2, name: "Medical Center", lat: 30.3255, lng: 78.0367, location: "ISBT Dehradun", products: "Medicines, First Aid, Health Supplements" },
-            { id: 3, name: "Food Court", lat: 30.3204, lng: 78.0301, location: "Paltan Bazaar", products: "Snacks, Beverages, Fast Food" },
-            { id: 4, name: "Books & Stationery", lat: 30.3596, lng: 78.0815, location: "Rajpur Road", products: "Books, Notebooks, Pens" },
-            { id: 5, name: "Grocery Store", lat: 30.3177, lng: 78.0339, location: "Clock Tower", products: "Groceries, Vegetables, Fruits" },
-            { id: 6, name: "Fashion Hub", lat: 30.3089, lng: 78.0435, location: "Ashley Hall", products: "Clothing, Accessories, Shoes" },
-            { id: 7, name: "Sports Center", lat: 30.3290, lng: 78.0267, location: "Rispana", products: "Sports Equipment, Fitness Gear" },
-            { id: 8, name: "Tech Plaza", lat: 30.3134, lng: 78.0404, location: "Gandhi Road", products: "Computer Parts, Gadgets" },
-            { id: 9, name: "Home & Garden", lat: 30.3076, lng: 78.0272, location: "Karanpur", products: "Furniture, Garden Tools, Decor" },
-            { id: 10, name: "Pharmacy Plus", lat: 30.3445, lng: 78.0661, location: "Sahastradhara Road", products: "Medicines, Cosmetics, Health Products" }
-        ];
-
-        warehouses.forEach(warehouse => {
-            this.addWarehouseMarker(warehouse.id, warehouse.lat, warehouse.lng, warehouse);
-        });
+        try {
+            const response = await fetch('/api/warehouses');
+            if (!response.ok) {
+                throw new Error(`API responded with status ${response.status}`);
+            }
+            const warehouses = await response.json();
+            if (!Array.isArray(warehouses) || warehouses.length === 0) {
+                console.warn('No warehouses returned from API.');
+                return;
+            }
+            warehouses.forEach(warehouse => {
+                if (warehouse.lat == null || warehouse.lng == null) return;
+                this.addWarehouseMarker(warehouse.id, warehouse.lat, warehouse.lng, {
+                    name: warehouse.name,
+                    location: warehouse.location || '',
+                    products: Array.isArray(warehouse.products)
+                        ? warehouse.products.join(', ')
+                        : (warehouse.products || '')
+                });
+            });
+        } catch (error) {
+            console.error('Failed to load warehouses from API:', error);
+        }
     }
 
     async loadDrones() {

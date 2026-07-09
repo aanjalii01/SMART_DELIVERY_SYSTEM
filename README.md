@@ -37,9 +37,10 @@ python run.py
 
 Now open `http://localhost:5000` in your browser.
 
+```markdown
 ## 📂 Project Structure
 
-```
+```text
 SMART_DELIVERY_SYSTEM/
 ├── app/
 │   ├── static/             # CSS and JS

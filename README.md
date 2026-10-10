@@ -471,4 +471,4 @@ Production uses PostgreSQL while local development uses SQLite.
 
 # 📄 License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the **MIT License**. 

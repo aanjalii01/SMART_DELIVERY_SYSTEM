@@ -462,8 +462,8 @@ Production uses PostgreSQL while local development uses SQLite.
 
 | Name | Role |
 |------|------|
-| **Hitesh Kumar** | Backend Development, Algorithms, Database Design, System Integration |
-| **Anjali Sinha** | Frontend Development, UI/UX Design |
+| **Anjali Sinha** | Backend Development, Algorithms, Database Design, System Integration |
+| **Hitesh Kumar** | Frontend Development, UI/UX Design |
 | **Vasu Singh** | Frontend Development, Testing & Documentation |
 | **Rahul Raj** | Backend Support, Testing & Deployment |
 
